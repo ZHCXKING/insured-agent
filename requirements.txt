@@ -1,0 +1,8 @@
+python-dotenv~=1.2.2
+ngrok~=1.7.0
+deepagents~=0.5.3
+langgraph~=1.1.8
+langchain~=1.2.15
+redis~=8.0.0b2
+requests~=2.33.1
+Flask~=3.1.3
