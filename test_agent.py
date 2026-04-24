@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 # 加载环境变量
 load_dotenv()
 
-from agent import IFAAssistantAgent # 替换为你的文件名
+from AssistantAgent.agent import AssistantAgent # 替换为你的文件名
 
 
 def main():
@@ -11,7 +11,7 @@ def main():
     print("输入 /exit 退出\n")
 
     # 初始化 Agent
-    agent = IFAAssistantAgent()
+    agent = AssistantAgent()
 
     # 初始化上下文（可随时修改）
     group = input("请输入群聊名称（默认 TestGroup）: ").strip() or "TestGroup"

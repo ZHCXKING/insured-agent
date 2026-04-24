@@ -6,7 +6,7 @@ import redis
 import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
-from agent import AssistantAgent
+from AssistantAgent.agent import AssistantAgent
 # %%
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
@@ -16,8 +16,9 @@ redis_url = os.getenv("REDIS_URL")
 redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
 ifa_agent = AssistantAgent()
 # %%
-def send_message_to_worktool(group_name: str, message_content: str, robot_id):
+def send_message(group_name: str, message_content: str):
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
+    robot_id = os.getenv("ROBOT_ID")
     # Query 参数
     params = {
         "robotId": robot_id
@@ -63,9 +64,9 @@ def handle_message_ifa(data):
         if at_me == 'false':
             return
         # 立刻发送一条消息进行响应
-        robot_id = os.getenv("IFA_ROBOT_ID")
-        ack_message = f"收到，正在为您处理，请稍等..."
-        send_message_to_worktool(group_name=group, message_content=ack_message, robot_id=robot_id)
+        # robot_id = os.getenv("IFA_ROBOT_ID")
+        # ack_message = f"收到，正在为您处理，请稍等..."
+        # send_message(group_name=group, message_content=ack_message)
         # 取出缓存记录，加锁并询问AI
         lock_key = f"lock:ifa_group:{group}"
         lock = redis_client.lock(lock_key, timeout=120, blocking_timeout=60)
@@ -79,7 +80,7 @@ def handle_message_ifa(data):
             )
             redis_client.delete(cache_key)
         # 发送回复
-        send_message_to_worktool(group_name=group, message_content=reply, robot_id=robot_id)
+        send_message(group_name=group, message_content=reply)
     except Exception as e:
         logger.error(f"处理消息失败: {e}")
 # %%

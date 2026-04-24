@@ -3,10 +3,12 @@ import os
 import logging
 from dataclasses import dataclass
 from deepagents import create_deep_agent, FilesystemPermission
-from deepagents.backends import CompositeBackend, StateBackend
+from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
 from deepagents.backends.filesystem import FilesystemBackend
 from langgraph.checkpoint.redis import RedisSaver
+from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
+from psycopg_pool import ConnectionPool
 # %%
 logger = logging.getLogger("IFA Assistant")
 # %%
@@ -20,6 +22,7 @@ class AssistantAgent:
         self.app_name = "Assistant"
         self._setup_directories()
         self._setup_checkpointer()
+        self._setup_store()
         self._setup_backend()
         self._setup_model()
         self._create_agent()
@@ -27,9 +30,7 @@ class AssistantAgent:
     def _setup_directories(self):
         """准备本地持久化目录"""
         self.base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.memories_dir = os.path.join(self.base_dir, "memories")
         self.skills_dir = os.path.join(self.base_dir, "skills")
-        os.makedirs(self.memories_dir, exist_ok=True)
         os.makedirs(self.skills_dir, exist_ok=True)
     # %%
     def _setup_checkpointer(self):
@@ -41,12 +42,19 @@ class AssistantAgent:
         )
         self.checkpointer.setup()
     # %%
+    def _setup_store(self):
+        """配置 PostgreSQL 作为长期记忆的存储"""
+        pg_url = os.getenv("POSTGRES_URL")
+        pool = ConnectionPool(pg_url, kwargs={"autocommit": True},)
+        self.store = PostgresStore(pool)
+        self.store.setup()
+    # %%
     def _setup_backend(self):
         """配置文件系统后端，映射虚拟路径到物理路径"""
         self.backend = CompositeBackend(
             default=StateBackend(),
             routes={
-                "/memories/": FilesystemBackend(root_dir=self.memories_dir, virtual_mode=True),
+                "/memories/": StoreBackend(namespace=lambda rt: (rt.context.group_name,),),
                 "/skills/": FilesystemBackend(root_dir=self.skills_dir, virtual_mode=True),
             }
         )
@@ -68,17 +76,13 @@ class AssistantAgent:
         self.agent = create_deep_agent(
             model=self.model,
             backend=self.backend,
+            store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
             skills=["/skills/"],
-            memory=["/memories/AGENTS.md"],
             system_prompt=system_prompt,
             permissions = [
-                FilesystemPermission(
-                    operations=["write"],
-                    paths=["/**"],
-                    mode="deny"
-                ),
+                FilesystemPermission(operations=["write"],paths=["/skills/**"],mode="deny"),
             ]
         )
     # %%
@@ -98,7 +102,7 @@ class AssistantAgent:
         context = GroupChatContext(group_name=group, sender_name=sender)
         config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}}
         enhanced_prompt = (
-            f"以下是缓存的近期聊天记录：\n"
+            f"以下是群聊缓存的近期聊天记录：\n"
             f"{text}\n"
             f"请根据上述记录，重点解答（{sender}）最后提出的问题或请求。"
         )
