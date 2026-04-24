@@ -1,6 +1,7 @@
 # %%
 import os
 import logging
+import atexit
 from dataclasses import dataclass
 from deepagents import create_deep_agent, FilesystemPermission
 from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
@@ -9,6 +10,8 @@ from langgraph.checkpoint.redis import RedisSaver
 from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
+from AssistantAgent.tools.send_message import send_message
+from AssistantAgent.tools.schedule_message import schedule_message_delayed
 # %%
 logger = logging.getLogger("IFA Assistant")
 # %%
@@ -46,6 +49,7 @@ class AssistantAgent:
         """配置 PostgreSQL 作为长期记忆的存储"""
         pg_url = os.getenv("POSTGRES_URL")
         pool = ConnectionPool(pg_url, kwargs={"autocommit": True},)
+        atexit.register(pool.close)
         self.store = PostgresStore(pool)
         self.store.setup()
     # %%
@@ -79,6 +83,7 @@ class AssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
+            tools=[send_message, schedule_message_delayed],
             skills=["/skills/"],
             system_prompt=system_prompt,
             permissions = [

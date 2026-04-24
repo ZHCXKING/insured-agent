@@ -3,7 +3,6 @@ import os
 import threading
 import logging
 import redis
-import requests
 from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 from AssistantAgent.agent import AssistantAgent
@@ -15,33 +14,6 @@ app = Flask(__name__)
 redis_url = os.getenv("REDIS_URL")
 redis_client = redis.Redis.from_url(redis_url, decode_responses=True)
 ifa_agent = AssistantAgent()
-# %%
-def send_message(group_name: str, message_content: str):
-    url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
-    robot_id = os.getenv("ROBOT_ID")
-    # Query 参数
-    params = {
-        "robotId": robot_id
-    }
-    # 构建消息体结构
-    message_item = {
-        "type": 203,
-        "titleList": [group_name],
-        "receivedContent": message_content
-    }
-    payload = {
-        "socketType": 2,
-        "list": [message_item]
-    }
-    headers = {
-        "Content-Type": "application/json"
-    }
-    response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
-    response_data = response.json()
-    if response.status_code == 200:
-        logger.info(f"消息发送成功至群 [{group_name}]")
-    else:
-        logger.error(f"消息发送失败，接口返回: {response_data}")
 # %%
 def handle_message_ifa(data):
     try:
@@ -63,10 +35,6 @@ def handle_message_ifa(data):
         # 判断是否触发机器人
         if at_me == 'false':
             return
-        # 立刻发送一条消息进行响应
-        # robot_id = os.getenv("IFA_ROBOT_ID")
-        # ack_message = f"收到，正在为您处理，请稍等..."
-        # send_message(group_name=group, message_content=ack_message)
         # 取出缓存记录，加锁并询问AI
         lock_key = f"lock:ifa_group:{group}"
         lock = redis_client.lock(lock_key, timeout=120, blocking_timeout=60)
@@ -79,8 +47,6 @@ def handle_message_ifa(data):
                 group=group
             )
             redis_client.delete(cache_key)
-        # 发送回复
-        send_message(group_name=group, message_content=reply)
     except Exception as e:
         logger.error(f"处理消息失败: {e}")
 # %%
