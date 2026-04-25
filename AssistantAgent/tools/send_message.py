@@ -15,7 +15,7 @@ def send_message(message: str, runtime: ToolRuntime) -> str:
     }
     payload = {"socketType": 2, "list": [message_item]}
     headers = {"Content-Type": "application/json"}
-    # TODO
+    # TODO 测试中，如果需要用worktool发送消息的话，将下面的注释去掉
     print(message)
     return f"消息发送成功"
     # response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)

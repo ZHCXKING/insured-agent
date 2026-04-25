@@ -2,6 +2,7 @@
 import os
 import logging
 import atexit
+import json
 from dataclasses import dataclass
 from deepagents import create_deep_agent, FilesystemPermission
 from deepagents.backends import CompositeBackend, StateBackend, StoreBackend
@@ -10,10 +11,10 @@ from langgraph.checkpoint.redis import RedisSaver
 from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
-from AssistantAgent.tools.send_message import send_message
-from AssistantAgent.tools.schedule_message import schedule_message_delayed
+from utils import get_image_type
+from AssistantAgent.tools import send_message, schedule_message_delayed
 # %%
-logger = logging.getLogger("IFA Assistant")
+logger = logging.getLogger("Assistant")
 # %%
 @dataclass
 class GroupChatContext:
@@ -28,6 +29,7 @@ class AssistantAgent:
         self._setup_store()
         self._setup_backend()
         self._setup_model()
+        self._setup_prompt()
         self._create_agent()
     # %%
     def _setup_directories(self):
@@ -74,9 +76,14 @@ class AssistantAgent:
             timeout=120
         )
     # %%
+    def _setup_prompt(self):
+        self.prompt = """
+        你是Assistant，一个专业的许可助手。
+        """
+    # %%
     def _create_agent(self):
         """组合上述组件，创建核心 Deep Agent"""
-        system_prompt = "你是 IFA Assistant，一个专业的许可助手。"
+        system_prompt = self.prompt
         self.agent = create_deep_agent(
             model=self.model,
             backend=self.backend,
@@ -104,17 +111,29 @@ class AssistantAgent:
         return reply_content
     # %%
     def process_messages(self, text: str, sender: str, group: str) -> str:
+        history_data = [json.loads(line) for line in text.splitlines()]
+        combined_content = []
+        history_text_lines = []
+        for entry in history_data:
+            history_text_lines.append(f"[{entry['sender']}]: {entry['spoken']}")
+            if entry.get("picture"):
+                mime_type, clean_b64 = get_image_type(entry["picture"])
+                combined_content.append({
+                    "type": "image_url",
+                    "image_url": {"url": f"data:{mime_type};base64,{clean_b64}"}
+                })
+        full_text = "\n".join(history_text_lines)
+        prompt = (
+            f"以下是群聊缓存记录：\n{full_text}\n"
+            f"请解答（{sender}）最后提出的问题或请求，并使用 send_message 进行回复。"
+        )
+        combined_content.insert(0, {"type": "text", "text": prompt})
+        messages = [{"role": "user", "content": combined_content}]
         context = GroupChatContext(group_name=group, sender_name=sender)
         config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}}
-        enhanced_prompt = (
-            f"以下是群聊缓存的近期聊天记录：\n"
-            f"{text}\n"
-            f"请根据上述记录，重点解答（{sender}）最后提出的问题或请求。"
-        )
         result = self.agent.invoke(
-            {"messages": [{"role": "user", "content": enhanced_prompt}]},
+            {"messages": messages},
             context=context,
             config=config
         )
-        reply_content = result["messages"][-1].content
-        return reply_content
+        return result["messages"][-1].content
