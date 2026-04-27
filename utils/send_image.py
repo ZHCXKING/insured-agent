@@ -1,17 +1,17 @@
 # %%
 import os
 import requests
-from langchain.tools import tool, ToolRuntime
 # %%
-@tool
-def send_message(message: str, runtime: ToolRuntime) -> str:
-    """向当前所在的群聊发送消息。"""
+def send_image(target_name: str, image_url: str, file_name: str = "image.png", extra_text: str = ""):
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
     params = {"robotId": os.getenv("ROBOT_ID")}
     message_item = {
-        "type": 203,
-        "titleList": [runtime.context.group_name],
-        "receivedContent": message
+        "type": 218,
+        "titleList": [target_name],
+        "objectName": file_name,
+        "fileUrl": image_url,
+        "fileType": "image",
+        "extraText": extra_text
     }
     payload = {"socketType": 2, "list": [message_item]}
     headers = {"Content-Type": "application/json"}

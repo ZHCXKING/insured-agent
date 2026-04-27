@@ -32,15 +32,12 @@ def execute_send_task(group_name: str, message: str):
     }
     payload = {"socketType": 2, "list": [message_item]}
     headers = {"Content-Type": "application/json"}
-    # TODO 测试中，如果需要用worktool发送消息的话，将下面的注释去掉
-    print(message)
-    return f"消息发送成功"
-    # response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
-    # response_data = response.json()
-    # if response.status_code == 200:
-    #     return f"消息发送成功"
-    # else:
-    #     return f"消息发送失败，接口返回: {response_data}"
+    response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
+    response_data = response.json()
+    if response.status_code == 200:
+        return f"消息发送成功"
+    else:
+        return f"消息发送失败，接口返回: {response_data}"
 # %%
 @tool
 def schedule_message_delayed(message: str, delay_minutes: float, runtime: ToolRuntime) -> str:

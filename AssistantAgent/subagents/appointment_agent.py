@@ -31,7 +31,6 @@ reservation_specialist = {
     2. 判断：检查关键字段（姓名、产品、日期、时间）是否齐全。
     3. 提问：如果信息不全，设置 needs_question 为 true，并在 question_content 中给出引导回复。
     4. 填充：将提取到的信息填入 current_data 模型。""",
-    # 👇 这里的响应格式改为顶层容器模型
     "response_format": SpecialistResponse,
     "skills": ["/skills/reservation/"]
 }

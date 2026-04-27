@@ -12,7 +12,7 @@ from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
 from utils import get_image_type
-from AssistantAgent.tools import send_message, schedule_message_delayed
+from AssistantAgent.tools import send_message, schedule_message_delayed, create_group
 # %%
 logger = logging.getLogger("Assistant")
 # %%
@@ -90,7 +90,7 @@ class AssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[send_message, schedule_message_delayed],
+            tools=[send_message, schedule_message_delayed, create_group],
             skills=["/skills/"],
             system_prompt=system_prompt,
             permissions = [
@@ -125,7 +125,7 @@ class AssistantAgent:
         full_text = "\n".join(history_text_lines)
         prompt = (
             f"以下是群聊缓存记录：\n{full_text}\n"
-            f"请解答（{sender}）最后提出的问题或请求，并使用 send_message 进行回复。"
+            f"请解答（{sender}）最后提出的问题或请求。"
         )
         combined_content.insert(0, {"type": "text", "text": prompt})
         messages = [{"role": "user", "content": combined_content}]
