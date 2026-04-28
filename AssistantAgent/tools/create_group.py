@@ -9,16 +9,32 @@ redis_url = os.getenv("REDIS_URL")
 redis_client = redis.from_url(redis_url, decode_responses=True)
 # %%
 @tool
-def create_group(new_group_name: str, members: list[str], runtime: ToolRuntime) -> str:
-    """创建一个指定名称的群聊，并拉入指定成员。创建成功后，稍后会自动将新群的二维码发回本群。"""
-    # TODO 在正式使用的时候，需要补全members
+def create_group(appointment_time: str, client_name: str, insurance_company: str, applicant_name: str, runtime: ToolRuntime) -> str:
+    """
+    为客户预约创建专属服务群聊。创建成功后，稍后会自动将新群的二维码发回本群。
+    :param appointment_time: 预约的日期，必须符合 YYYY.M.D 格式，例如 "2026.4.23"
+    :param client_name: 客户的姓名
+    :param insurance_company: 保险公司名称
+    :param applicant_name: 申请预约的人员（顾问）名称
+    """
+    new_group_name = f"{appointment_time}{client_name}{insurance_company}"
+    # TODO: 请在正式使用时，将下面列表里的名字替换为真实的好友备注名
+    # fixed_members = [
+    #     "固定成员1",
+    #     "固定成员2",
+    #     "固定成员3",
+    #     "固定成员4",
+    #     "固定成员5"
+    # ]
+    # members = fixed_members + [applicant_name]
+    members = [applicant_name]
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
     params = {"robotId": os.getenv("ROBOT_ID")}
     message_item = {
         "type": 206,
         "groupName": new_group_name,
         "selectList": members,
-        "groupAnnouncement": "欢迎加入本群！"
+        "groupAnnouncement": f"欢迎加入【{client_name}】的专属服务群！"
     }
     payload = {"socketType": 2, "list": [message_item]}
     headers = {"Content-Type": "application/json"}

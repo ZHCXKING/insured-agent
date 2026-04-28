@@ -71,6 +71,7 @@ def third_qa():
 @app.route('/QRcode', methods=['POST'])
 def QRcode():
     data = request.json
+    print(data)
     if not data:
         return jsonify({"code": -1, "message": "无有效数据"}), 400
     message_id = data.get('messageId')
@@ -85,7 +86,7 @@ def QRcode():
         encoded_link = urllib.parse.quote(qr_link)
         qr_image_url = f"https://api.qrserver.com/v1/create-qr-code/?size=400x400&data={encoded_link}"
         file_name = f"{new_group_name}_qrcode.png"
-        extra_text = f"新群聊【{new_group_name}】创建成功！\n请扫码上方二维码加入"
+        extra_text = f"新群聊【{new_group_name}】创建成功！"
         send_image(
             target_name=original_group,
             image_url=qr_image_url,
