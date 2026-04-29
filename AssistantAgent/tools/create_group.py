@@ -47,7 +47,7 @@ def create_group(appointment_time: str, client_name: str, insurance_company: str
             "original_group": original_group,
             "new_group_name": new_group_name
         }
-        redis_key = f"creating_group:{message_id}"
+        redis_key = f"creating_group:{new_group_name}"
         redis_client.setex(redis_key, 3600, json.dumps(task_info))
         return f"已向后台下发创建【{new_group_name}】的指令，正在等待生成群二维码，请稍候..."
     else:

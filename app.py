@@ -74,9 +74,9 @@ def QRcode():
     print(data)
     if not data:
         return jsonify({"code": -1, "message": "无有效数据"}), 400
-    message_id = data.get('messageId')
+    group_name = data.get('groupName')
     qr_link = data.get('qrCode')
-    redis_key = f"creating_group:{message_id}"
+    redis_key = f"creating_group:{group_name}"
     task_data_str = redis_client.get(redis_key)
     if task_data_str:
         redis_client.delete(redis_key)
@@ -96,6 +96,11 @@ def QRcode():
         return jsonify({"code": 0, "status": "success", "message": "二维码已成功回传给原群聊"})
     else:
         return jsonify({"code": -1, "status": "ignored", "message": "未知的 messageId 或任务已过期"})
+# %%
+@app.route('/health', methods=['GET'])
+def health():
+    return jsonify({"status": "ok"})
+# %%
 if __name__ == '__main__':
     port = int(os.getenv("PORT"))
     app.run(host='0.0.0.0', port=port, debug=False)
