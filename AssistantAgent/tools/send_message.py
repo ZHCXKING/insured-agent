@@ -7,7 +7,7 @@ from langchain.tools import tool, ToolRuntime
 def send_message(message: str, runtime: ToolRuntime) -> str:
     """向当前所在的群聊发送消息。"""
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
-    params = {"robotId": os.getenv("ROBOT_ID")}
+    params = {"robotId": os.getenv("AA_ROBOT_ID")}
     message_item = {
         "type": 203,
         "titleList": [runtime.context.group_name],

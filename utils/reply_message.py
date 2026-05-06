@@ -2,10 +2,10 @@
 import os
 import requests
 # %%
-def reply_message(message: str, group_name: str) -> str:
+def reply_message(message: str, group_name: str, robot_id: str) -> str:
     """向当前所在的群聊发送消息。"""
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
-    params = {"robotId": os.getenv("ROBOT_ID")}
+    params = {"robotId": robot_id}
     message_item = {
         "type": 203,
         "titleList": [group_name],

@@ -2,9 +2,9 @@
 import os
 import requests
 # %%
-def send_image(target_name: str, image_url: str, file_name: str = "image.png", extra_text: str = ""):
+def send_image(target_name: str, image_url: str, file_name: str = "image.png", extra_text: str = "", robot_id: str = ""):
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
-    params = {"robotId": os.getenv("ROBOT_ID")}
+    params = {"robotId": robot_id}
     message_item = {
         "type": 218,
         "titleList": [target_name],

@@ -9,6 +9,7 @@ from flask import Flask, request, jsonify
 from dotenv import load_dotenv
 load_dotenv()
 from AssistantAgent.agent import AssistantAgent
+from GreatGroupAgent.agent import GreatGroupAgent
 from utils import reply_message, send_image
 # %%
 logging.basicConfig(level=logging.INFO)
@@ -17,8 +18,11 @@ app = Flask(__name__)
 redis_url = os.getenv("REDIS_URL")
 redis_client = redis.from_url(redis_url, decode_responses=True)
 AA_agent = AssistantAgent()
+AA_agent.robot_id = os.getenv("AA_ROBOT_ID")
+GGA_agent = GreatGroupAgent()
+GGA_agent.robot_id = os.getenv("GGA_ROBOT_ID")
 # %%
-def handle_message(data):
+def handle_message(data, agent):
     try:
         print(data)
         spoken = data.get("spoken")
@@ -26,42 +30,51 @@ def handle_message(data):
         group = data.get("groupName")
         at_me = data.get("atMe")
         picture = data.get("fileBase64")
-        # 消息缓存
-        cache_key = f"chat_cache:{group}"
+        cache_key = f"chat_cache:{agent.app_name}:{group}"
         message_obj = {
             "sender": sender,
             "spoken": spoken,
             "picture": picture
         }
-        redis_client.rpush(cache_key, json.dumps(message_obj))
-        redis_client.ltrim(cache_key, -200, -1) #只保留最近200条消息
-        redis_client.expire(cache_key, 259200) #缓存日期保留3天
-        # 判断是否触发机器人
-        if at_me == 'true':
-            # 取出缓存记录，加锁并询问AI
-            lock_key = f"lock:AA_group:{group}"
-            lock = redis_client.lock(lock_key, timeout=120, blocking_timeout=60)
-            with lock:
-                cached_history_list = redis_client.lrange(cache_key, 0, -1)
-                cached_history_text = "\n".join(cached_history_list)
-                reply = AA_agent.process_messages(
-                    text=cached_history_text,
-                    sender=sender,
-                    group=group
-                )
-                redis_client.delete(cache_key)
-            reply_message(reply, group)
-        else:
+        if at_me != 'true':
+            redis_client.rpush(cache_key, json.dumps(message_obj))
+            redis_client.ltrim(cache_key, -200, -1)
+            redis_client.expire(cache_key, 259200)
             return
+        lock_key = f"lock:{agent.app_name}_group:{group}"
+        lock = redis_client.lock(lock_key, timeout=120, blocking_timeout=60)
+        with lock:
+            cached_history_list = redis_client.lrange(cache_key, 0, -1)
+            redis_client.ltrim(cache_key, len(cached_history_list), -1)
+            cached_history_list.append(json.dumps(message_obj))
+            cached_history_text = "\n".join(cached_history_list)
+            reply = agent.process_messages(
+                text=cached_history_text,
+                sender=sender,
+                group=group
+            )
+        reply_message(reply, group, agent.robot_id)
     except Exception as e:
         logger.error(f"处理消息失败: {e}")
 # %%
-@app.route('/message', methods=['POST'])
-def third_qa():
+@app.route('/assistant/message', methods=['POST'])
+def assistant_message():
     data = request.json
     if not data:
         return jsonify({"code": -1, "message": "无有效数据"}), 400
-    thread = threading.Thread(target=handle_message, args=(data,))
+    thread = threading.Thread(target=handle_message, args=(data, AA_agent))
+    thread.start()
+    return jsonify({
+        "code": 0,
+        "message": "success"
+    })
+# %%
+@app.route('/greatgroup/message', methods=['POST'])
+def greatgroup_message():
+    data = request.json
+    if not data:
+        return jsonify({"code": -1, "message": "无有效数据"}), 400
+    thread = threading.Thread(target=handle_message, args=(data, GGA_agent))
     thread.start()
     return jsonify({
         "code": 0,
@@ -91,7 +104,8 @@ def QRcode():
             target_name=original_group,
             image_url=qr_image_url,
             file_name=file_name,
-            extra_text=extra_text
+            extra_text=extra_text,
+            robot_id=os.getenv("GGA_ROBOT_ID")
         )
         return jsonify({"code": 0, "status": "success", "message": "二维码已成功回传给原群聊"})
     else:

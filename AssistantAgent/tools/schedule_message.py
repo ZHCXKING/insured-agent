@@ -24,7 +24,7 @@ scheduler.start()
 def execute_send_task(group_name: str, message: str):
     """具体的发送动作"""
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
-    params = {"robotId": os.getenv("ROBOT_ID")}
+    params = {"robotId": os.getenv("AA_ROBOT_ID")}
     message_item = {
         "type": 203,
         "titleList": [group_name],

@@ -29,7 +29,7 @@ def create_group(appointment_time: str, client_name: str, insurance_company: str
     # members = fixed_members + [applicant_name]
     members = [applicant_name]
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
-    params = {"robotId": os.getenv("ROBOT_ID")}
+    params = {"robotId": os.getenv("GGA_ROBOT_ID")}
     message_item = {
         "type": 206,
         "groupName": new_group_name,
@@ -41,7 +41,6 @@ def create_group(appointment_time: str, client_name: str, insurance_company: str
     response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
     response_data = response.json()
     if response_data.get("code") == 200:
-        message_id = response_data.get("data")
         original_group = runtime.context.group_name
         task_info = {
             "original_group": original_group,

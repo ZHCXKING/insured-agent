@@ -12,18 +12,18 @@ from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
 from utils import get_image_type
-from AssistantAgent.tools import send_message, schedule_message_delayed
+from GreatGroupAgent.tools import create_group
 # %%
-logger = logging.getLogger("Assistant")
+logger = logging.getLogger("GreatGroup")
 # %%
 @dataclass
 class GroupChatContext:
     group_name: str
     sender_name: str
 # %%
-class AssistantAgent:
+class GreatGroupAgent:
     def __init__(self):
-        self.app_name = "Assistant"
+        self.app_name = "GreatGroup"
         self._setup_directories()
         self._setup_checkpointer()
         self._setup_store()
@@ -60,7 +60,7 @@ class AssistantAgent:
         self.backend = CompositeBackend(
             default=StateBackend(),
             routes={
-                "/memories/": StoreBackend(namespace=lambda rt: ("Assistant", rt.context.group_name,),),
+                "/memories/": StoreBackend(namespace=lambda rt: ("GreatGroup", rt.context.group_name,),),
                 "/skills/": FilesystemBackend(root_dir=self.skills_dir, virtual_mode=True),
             }
         )
@@ -78,7 +78,7 @@ class AssistantAgent:
     # %%
     def _setup_prompt(self):
         self.prompt = """
-        你是Assistant，一个专业的许可助手。
+        你是一个专门用来判断是否创建群聊的助手，负责判断顾问是否要创建群聊的需求。如果有，则使用工具创建群聊。
         """
     # %%
     def _create_agent(self):
@@ -90,7 +90,7 @@ class AssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[send_message, schedule_message_delayed],
+            tools=[create_group],
             skills=["/skills/"],
             system_prompt=system_prompt,
             permissions = [
