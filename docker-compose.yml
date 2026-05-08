@@ -10,15 +10,12 @@ services:
         condition: service_healthy
       postgres:
         condition: service_healthy
-    # TODO 在正式部署的时候，要将卷改一下，不要实时更新
-    volumes:
-      - .:/app:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
-      interval: 30s
+      interval: 30m
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 10s
 
   redis:
     image: redis/redis-stack:7.4.0-v8
@@ -29,12 +26,13 @@ services:
       - redis_data:/data
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
-      interval: 30s
+      interval: 30m
       timeout: 5s
       retries: 5
+      start_period: 10s
 
   postgres:
-    image: postgres:16-alpine
+    image: postgres:18-bookworm
     # TODO 在正式部署的时候，要改端口暴露
     ports:
       - "5432:5432"
@@ -43,12 +41,13 @@ services:
       POSTGRES_USER: agent
       POSTGRES_PASSWORD: agent_password
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U agent -d agent"]
-      interval: 30s
+      interval: 30m
       timeout: 5s
       retries: 5
+      start_period: 10s
 
 volumes:
   redis_data:
