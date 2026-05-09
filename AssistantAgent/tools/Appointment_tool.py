@@ -46,9 +46,10 @@ def match_client(id_number: str = "", hk_id_number: str = "") -> str:
 # %%
 def search_users(search: str = "", role: str = "") -> str:
     """
-    通过关键字模糊搜索机构内的用户列表。可按姓名/英文名/昵称/邮箱/手机号模糊匹配。
+    通过关键字模糊搜索机构内的用户列表。传入一个关键字后，后端会在姓名、英文名、昵称、邮箱、手机号五个字段中同时进行OR模糊匹配，无需指定具体字段。
+    例如传入"张"会同时匹配姓名含"张"的用户和手机号含"张"的用户。
     参数:
-        search: 搜索关键字（姓名/英文名/昵称/邮箱/手机号）
+        search: 搜索关键字，后端自动在姓名/英文名/昵称/邮箱/手机号中匹配
         role: 按角色精确过滤，可选值：admin/fin/hr/info/biz/proposal_it/sales/referrer/partner/signing_clerk/signing_manager
     """
     base_url = os.getenv("ORGANIZATION_URL")
@@ -587,24 +588,24 @@ def create_appointment(
     channel_id: str = "",
     signing_clerk_id: str = "",
     signing_room_id: str = "",
-    policyholder_ids: str = "",
-    insured_ids: str = "",
-    policy_ids: str = "",
+    policyholder_ids: list[str] = [],
+    insured_ids: list[str] = [],
+    policy_ids: list[str] = [],
     reject_reason: str = "",
     remark: str = "",
 ) -> str:
     """
     在指定机构下创建预约。至少需要提供 time、sales_id、policyholder_ids、insured_ids。
     参数:
-        time: 预约日期，格式 YYYY-MM-DD
+        time: 预约时间，格式 YYYY-MM-DD HH:mm
         type: 预约类型，0=个人预约，1=独立预约，2=文件协助，3=全程协助（默认3）
         sales_id: 业务代表用户ID
         channel_id: 转介人用户ID
         signing_clerk_id: 签单文员ID
         signing_room_id: 签单房间ID
-        policyholder_ids: 投保人客户ID列表，多个用英文逗号分隔
-        insured_ids: 受保人客户ID列表，多个用英文逗号分隔
-        policy_ids: 关联保单ID列表，多个用英文逗号分隔
+        policyholder_ids: 投保人客户ID列表
+        insured_ids: 受保人客户ID列表
+        policy_ids: 关联保单ID列表
         reject_reason: 拒绝原因
         remark: 备注
     """
@@ -619,10 +620,10 @@ def create_appointment(
     payload = {"status": 1, "process": 2, "type": type}
     if time:
         try:
-            dt = datetime.strptime(time, "%Y-%m-%d")
+            dt = datetime.strptime(time, "%Y-%m-%d %H:%M")
             payload["time"] = int(dt.timestamp())
         except ValueError:
-            return f"错误：日期格式不正确，请使用 YYYY-MM-DD 格式（如 2026-05-08）"
+            return f"错误：时间格式不正确，请使用 YYYY-MM-DD HH:mm 格式（如 2026-05-08 14:30）"
     if sales_id:
         payload["sales_id"] = sales_id
     if channel_id:
@@ -632,11 +633,11 @@ def create_appointment(
     if signing_room_id:
         payload["signing_room_id"] = signing_room_id
     if policyholder_ids:
-        payload["policyholder_ids"] = [s.strip() for s in policyholder_ids.split(",")]
+        payload["policyholder_ids"] = policyholder_ids
     if insured_ids:
-        payload["insured_ids"] = [s.strip() for s in insured_ids.split(",")]
+        payload["insured_ids"] = insured_ids
     if policy_ids:
-        payload["policy_ids"] = [s.strip() for s in policy_ids.split(",")]
+        payload["policy_ids"] = policy_ids
     if reject_reason:
         payload["reject_reason"] = reject_reason
     if remark:
@@ -674,9 +675,9 @@ def update_appointment(
     channel_id: str = "",
     signing_clerk_id: str = "",
     signing_room_id: str = "",
-    policyholder_ids: str = "",
-    insured_ids: str = "",
-    policy_ids: str = "",
+    policyholder_ids: list[str] = [],
+    insured_ids: list[str] = [],
+    policy_ids: list[str] = [],
     reject_reason: str = "",
     remark: str = "",
 ) -> str:
@@ -684,15 +685,15 @@ def update_appointment(
     更新指定机构下已有预约的信息。只需传入需要修改的字段，未传字段保持原值。appointment_id 为必填。
     参数:
         appointment_id: 预约ID（必填）
-        time: 预约日期，格式 YYYY-MM-DD
+        time: 预约时间，格式 YYYY-MM-DD HH:mm
         type: 预约类型，0=个人预约，1=独立预约，2=文件协助，3=全程协助（默认3）
         sales_id: 业务代表用户ID
         channel_id: 转介人用户ID
         signing_clerk_id: 签单文员ID
         signing_room_id: 签单房间ID
-        policyholder_ids: 投保人客户ID列表，多个用英文逗号分隔
-        insured_ids: 受保人客户ID列表，多个用英文逗号分隔
-        policy_ids: 关联保单ID列表，多个用英文逗号分隔
+        policyholder_ids: 投保人客户ID列表
+        insured_ids: 受保人客户ID列表
+        policy_ids: 关联保单ID列表
         reject_reason: 拒绝原因
         remark: 备注
     """
@@ -709,10 +710,10 @@ def update_appointment(
     payload = {}
     if time:
         try:
-            dt = datetime.strptime(time, "%Y-%m-%d")
+            dt = datetime.strptime(time, "%Y-%m-%d %H:%M")
             payload["time"] = int(dt.timestamp())
         except ValueError:
-            return f"错误：日期格式不正确，请使用 YYYY-MM-DD 格式（如 2026-05-08）"
+            return f"错误：时间格式不正确，请使用 YYYY-MM-DD HH:mm 格式（如 2026-05-08 14:30）"
     if type:
         payload["type"] = type
     if sales_id:
@@ -724,11 +725,11 @@ def update_appointment(
     if signing_room_id:
         payload["signing_room_id"] = signing_room_id
     if policyholder_ids:
-        payload["policyholder_ids"] = [s.strip() for s in policyholder_ids.split(",")]
+        payload["policyholder_ids"] = policyholder_ids
     if insured_ids:
-        payload["insured_ids"] = [s.strip() for s in insured_ids.split(",")]
+        payload["insured_ids"] = insured_ids
     if policy_ids:
-        payload["policy_ids"] = [s.strip() for s in policy_ids.split(",")]
+        payload["policy_ids"] = policy_ids
     if reject_reason:
         payload["reject_reason"] = reject_reason
     if remark:
@@ -759,3 +760,291 @@ def update_appointment(
         f"更新时间: {data.get('updated_at', '')}",
     ]
     return "预约更新成功：\n" + "\n".join(info_lines)
+# %%
+def get_appointment(appointment_id: str) -> str:
+    """
+    根据预约ID查询预约详情。
+    参数:
+        appointment_id: 预约ID（必填）
+    """
+    base_url = os.getenv("ORGANIZATION_URL")
+    api_key = os.getenv("ORGANIZATION_KEY")
+    org_code = os.getenv("ORG_CODE")
+    if not appointment_id:
+        return "错误：预约ID（appointment_id）为必填项"
+    url = f"{base_url}/open/organizations/{org_code}/appointments/{appointment_id}"
+    headers = {
+        "Authorization": f"ApiKey {api_key}",
+        "Accept": "application/json",
+    }
+    response = requests.get(url, headers=headers, timeout=15)
+    if response.status_code != 200:
+        return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
+    data = response.json().get("data", response.json())
+    _status_map = {0: "草稿", 1: "审核中", 2: "预约中", 3: "确认预约", 4: "签单完成", 5: "取消投保", 6: "拒绝申请"}
+    _type_map = {0: "个人预约", 1: "独立预约", 2: "文件协助", 3: "全程协助"}
+    _process_map = {0: "基础信息", 1: "客户信息", 2: "保单信息"}
+    sales = data.get("sales") or {}
+    channel = data.get("channel") or {}
+    signing_clerk = data.get("signing_clerk") or {}
+    signing_room = data.get("signing_room") or {}
+    info_lines = [
+        f"预约ID: {data.get('id')}",
+        f"预约时间: {data.get('time', 0)}",
+        f"状态: {_status_map.get(data.get('status', 0), '未知')}",
+        f"类型: {_type_map.get(data.get('type', 0), '未知')}",
+        f"流程节点: {_process_map.get(data.get('process', 0), '未知')}",
+        f"业务代表: {sales.get('name', '')} (ID: {data.get('sales_id', '')})",
+        f"转介人: {channel.get('name', '')} (ID: {data.get('channel_id', '')})",
+        f"签单文员: {signing_clerk.get('name', '')} (ID: {data.get('signing_clerk_id', '')})",
+        f"签单房间: {signing_room.get('name', '')} (ID: {data.get('signing_room_id', '')})",
+        f"投保人ID: {data.get('policyholder_ids', [])}",
+        f"受保人ID: {data.get('insured_ids', [])}",
+        f"关联保单ID: {data.get('policy_ids', [])}",
+        f"拒绝原因: {data.get('reject_reason', '')}",
+        f"备注: {data.get('remark', '')}",
+        f"创建时间: {data.get('created_at', '')}",
+        f"更新时间: {data.get('updated_at', '')}",
+    ]
+    return "预约详情：\n" + "\n".join(info_lines)
+# %%
+def search_companies(name: str = "") -> str:
+    """
+    按名称模糊搜索机构下的保险公司，返回公司ID、名称、缩写等信息。用于创建保单前查找 product_company_id。
+    参数:
+        name: 保险公司名称（模糊匹配中文名/英文名）
+    """
+    base_url = os.getenv("ORGANIZATION_URL")
+    api_key = os.getenv("ORGANIZATION_KEY")
+    org_code = os.getenv("ORG_CODE")
+    url = f"{base_url}/open/organizations/{org_code}/companies"
+    headers = {
+        "Authorization": f"ApiKey {api_key}",
+        "Accept": "application/json",
+    }
+    params = {"page": 1, "page_size": 20}
+    if name:
+        params["name"] = name
+    response = requests.get(url, params=params, headers=headers, timeout=15)
+    if response.status_code != 200:
+        return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
+    data = response.json()
+    companies = data.get("data", [])
+    if not companies:
+        return "未搜索到匹配的保险公司。"
+    lines = []
+    for c in companies:
+        company_lines = [
+            f"  公司ID: {c.get('id')}",
+            f"  中文名: {c.get('name', '')}",
+            f"  英文名: {c.get('english_name', '')}",
+            f"  缩写: {c.get('abbreviation', '')}",
+            f"  计划书标识: {c.get('proposal_identifier', '')}",
+        ]
+        lines.append("\n".join(company_lines))
+    total = data.get("pagination", {}).get("total", len(companies))
+    header = f"共搜索到 {total} 家保险公司："
+    return header + "\n" + "\n---\n".join(lines)
+# %%
+def search_products(name: str = "", company_id: str = "") -> str:
+    """
+    按产品名称和保险公司ID搜索产品，返回产品ID、名称、SKU列表等信息。用于创建保单前查找 product_sku_id。
+    参数:
+        name: 产品名称（模糊匹配中文名/英文名）
+        company_id: 保险公司ID（精确过滤，可通过 search_companies 获取）
+    """
+    base_url = os.getenv("ORGANIZATION_URL")
+    api_key = os.getenv("ORGANIZATION_KEY")
+    org_code = os.getenv("ORG_CODE")
+    url = f"{base_url}/open/organizations/{org_code}/products"
+    headers = {
+        "Authorization": f"ApiKey {api_key}",
+        "Accept": "application/json",
+    }
+    params = {"page": 1, "page_size": 20}
+    if name:
+        params["name"] = name
+    if company_id:
+        params["company_id"] = company_id
+    response = requests.get(url, params=params, headers=headers, timeout=15)
+    if response.status_code != 200:
+        return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
+    data = response.json()
+    products = data.get("data", [])
+    if not products:
+        return "未搜索到匹配的产品。"
+    lines = []
+    for p in products:
+        company = p.get("company") or {}
+        product_lines = [
+            f"  产品ID: {p.get('id')}",
+            f"  中文名: {p.get('name', '')}",
+            f"  英文名: {p.get('english_name', '')}",
+            f"  类型: {p.get('type', '')}",
+            f"  续保计划: {p.get('renewal_plan', '')}",
+            f"  状态: {p.get('status', '')}",
+            f"  保险公司: {company.get('name', '')} (ID: {p.get('company_id', '')})",
+        ]
+        lines.append("\n".join(product_lines))
+    total = data.get("pagination", {}).get("total", len(products))
+    header = f"共搜索到 {total} 个产品："
+    return header + "\n" + "\n---\n".join(lines)
+# %%
+def create_policy(
+    no: str,
+    applicant_id: str,
+    insurant_id: str,
+    insured_policyholder_relation: int,
+    product_company_id: str,
+    product_sku_id: str,
+    signing_clerk_id: str = "",
+    channel_id: str = "",
+    sales_id: str = "",
+    applied_at: str = "",
+    premium_time: str = "",
+    premium: str = "0",
+    currency: str = "HKD",
+    payment_period: int = 1,
+    renewal_plan: str = "Annual",
+    sum_assured: str = "0",
+    beneficiary_distribution_mode: int = 1,
+    beneficiaries: list[dict] = [],
+    remark: str = "",
+) -> str:
+    """
+    在指定机构下创建保单。必须提供投保人、受保人、保险公司、产品、签单员或转介人、受益人。
+    参数:
+        no: 保单号（必填）
+        applicant_id: 投保人客户ID（必填）
+        insurant_id: 受保人客户ID（必填）
+        insured_policyholder_relation: 受保人与投保人关系（必填），1=本人，2=父母，3=子女，4=配偶，5=兄弟姐妹，6=祖父母，7=雇员，8=其他
+        product_company_id: 保险公司ID（必填，通过 search_companies 获取）
+        product_sku_id: 产品SKU ID（必填，通过 search_products 获取产品详情后取得）
+        signing_clerk_id: 签单文员用户ID（与 channel_id 至少填一个）
+        channel_id: 转介人用户ID（与 signing_clerk_id 至少填一个）
+        sales_id: 业务代表用户ID
+        applied_at: 签单日，格式 YYYY-MM-DD
+        premium_time: 当前应缴日，格式 YYYY-MM-DD
+        premium: 当期保费
+        currency: 币种，默认HKD
+        payment_period: 供款年期，默认1
+        renewal_plan: 续保计划，Single/Annual/HalfYearly/Quarterly，默认Annual
+        sum_assured: 保额
+        beneficiary_distribution_mode: 受益人分配模式，1=按比例（默认），2=按顺位
+        beneficiaries: 受益人列表（必填），每个元素为字典，含字段：name(中文姓名，必填)、english_name(拼音或英文名，必填)、id_number(证件号，必填)、relationship(与受保人关系，必填)、proportion(分配比例0~1，按比例模式时必填)
+        remark: 备注
+    """
+    base_url = os.getenv("ORGANIZATION_URL")
+    api_key = os.getenv("ORGANIZATION_KEY")
+    org_code = os.getenv("ORG_CODE")
+    if not applicant_id:
+        return "错误：投保人客户ID（applicant_id）为必填项"
+    if not insurant_id:
+        return "错误：受保人客户ID（insurant_id）为必填项"
+    if not insured_policyholder_relation:
+        return "错误：受保人与投保人关系（insured_policyholder_relation）为必填项"
+    if not product_company_id:
+        return "错误：保险公司ID（product_company_id）为必填项"
+    if not product_sku_id:
+        return "错误：产品SKU ID（product_sku_id）为必填项"
+    if not channel_id and not sales_id and not signing_clerk_id:
+        return "错误：签单文员ID（signing_clerk_id）、转介人ID（channel_id）、业务代表ID（sales_id）至少填一个"
+    if not beneficiaries:
+        return "错误：受益人列表（beneficiaries）为必填项"
+    for i, b in enumerate(beneficiaries):
+        if not b.get("name"):
+            return f"错误：第 {i+1} 个受益人缺少中文姓名（name）"
+        if not b.get("english_name"):
+            return f"错误：第 {i+1} 个受益人缺少拼音或英文名（english_name）"
+        if not b.get("id_number"):
+            return f"错误：第 {i+1} 个受益人缺少证件号（id_number）"
+        if not b.get("relationship"):
+            return f"错误：第 {i+1} 个受益人缺少与受保人关系（relationship）"
+
+    url = f"{base_url}/open/organizations/{org_code}/policies"
+    headers = {
+        "Authorization": f"ApiKey {api_key}",
+        "Content-Type": "application/json",
+    }
+    formatted_beneficiaries = []
+    for b in beneficiaries:
+        fb = {
+            "name": b["name"],
+            "english_name": b["english_name"],
+            "id_number": b["id_number"],
+            "relationship": b["relationship"],
+        }
+        if b.get("proportion"):
+            fb["proportion"] = b["proportion"]
+        formatted_beneficiaries.append(fb)
+    payload = {
+        "no": no,
+        "applicant_id": applicant_id,
+        "insurant_id": insurant_id,
+        "insured_policyholder_relation": insured_policyholder_relation,
+        "product_company_id": product_company_id,
+        "product_sku_id": product_sku_id,
+        "beneficiary_distribution_mode": beneficiary_distribution_mode,
+        "beneficiaries": formatted_beneficiaries,
+    }
+    if signing_clerk_id:
+        payload["signing_clerk_id"] = signing_clerk_id
+    if channel_id:
+        payload["channel_id"] = channel_id
+    if sales_id:
+        payload["sales_id"] = sales_id
+    if applied_at:
+        try:
+            dt = datetime.strptime(applied_at, "%Y-%m-%d")
+            payload["applied_at"] = int(dt.timestamp())
+        except ValueError:
+            return "错误：签单日格式不正确，请使用 YYYY-MM-DD 格式"
+    if premium_time:
+        try:
+            dt = datetime.strptime(premium_time, "%Y-%m-%d")
+            payload["premium_time"] = int(dt.timestamp())
+        except ValueError:
+            return "错误：应缴日格式不正确，请使用 YYYY-MM-DD 格式"
+    if premium and premium != "0":
+        payload["premium"] = premium
+    if currency:
+        payload["currency"] = currency
+    if payment_period:
+        payload["payment_period"] = payment_period
+    if renewal_plan:
+        payload["renewal_plan"] = renewal_plan
+    if sum_assured and sum_assured != "0":
+        payload["sum_assured"] = sum_assured
+    if beneficiaries:
+        payload["beneficiaries"] = beneficiaries
+    if remark:
+        payload["remark"] = remark
+    response = requests.post(url, json=payload, headers=headers, timeout=15)
+    if response.status_code != 200:
+        return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
+    data = response.json()
+    _status_map = {
+        1: "等待进入保司系统", 2: "待查询进度", 3: "欠费", 4: "待处理中",
+        5: "再次出现待处理", 6: "已递交待处理", 7: "需要体检或报告", 8: "等待生效",
+        9: "已生效", 10: "有不保事项/加费", 11: "已拒保/被搁置", 12: "保司自动取消",
+        13: "客人要求取消", 14: "冷静期退保", 15: "保单失效",
+    }
+    _type_map = {0: "默认", 1: "正式保单", 2: "托管保单"}
+    info_lines = [
+        f"保单ID: {data.get('id')}",
+        f"保单号: {data.get('no', '')}",
+        f"状态: {_status_map.get(data.get('status', 0), '未知')}",
+        f"类型: {_type_map.get(data.get('type', 0), '未知')}",
+        f"投保人ID: {data.get('applicant_id', '')}",
+        f"受保人ID: {data.get('insurant_id', '')}",
+        f"保费: {data.get('premium', '')} {data.get('currency', '')}",
+        f"保额: {data.get('sum_assured', '')}",
+        f"续保计划: {data.get('renewal_plan', '')}",
+        f"供款年期: {data.get('payment_period', '')}",
+        f"签单文员ID: {data.get('signing_clerk_id', '')}",
+        f"转介人ID: {data.get('channel_id', '')}",
+        f"业务代表ID: {data.get('sales_id', '')}",
+        f"受益人: {data.get('beneficiaries', [])}",
+        f"创建时间: {data.get('created_at', '')}",
+    ]
+    return "保单创建成功：\n" + "\n".join(info_lines)
