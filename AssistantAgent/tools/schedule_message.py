@@ -3,6 +3,7 @@ import os
 import requests
 import redis
 from datetime import datetime, timedelta
+from pydantic import BaseModel, Field
 from langchain.tools import tool, ToolRuntime
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.jobstores.redis import RedisJobStore
@@ -41,14 +42,20 @@ def execute_send_task(group_name: str, message: str):
     # else:
     #     return f"消息发送失败，接口返回: {response_data}"
 # %%
-@tool
+class ScheduleMessageInput(BaseModel):
+    message: str = Field(
+        ...,
+        description="要发送的消息内容",
+    )
+    delay_minutes: float = Field(
+        ...,
+        description="延迟发送的时间（分钟数，支持小数。例如10秒=0.166）",
+        gt=0,
+    )
+# %%
+@tool(args_schema=ScheduleMessageInput)
 def schedule_message_delayed(message: str, delay_minutes: float, runtime: ToolRuntime) -> str:
-    """
-    在指定分钟数后向当前群聊发送消息。
-    参数:
-        message: 要发送的消息内容
-        delay_minutes: 延迟发送的时间（分钟数，支持小数。例如10秒=0.166）
-    """
+    """在指定分钟数后向当前群聊发送消息。"""
     group_name = runtime.context.group_name
     run_date = datetime.now() + timedelta(minutes=delay_minutes)
     scheduler.add_job(

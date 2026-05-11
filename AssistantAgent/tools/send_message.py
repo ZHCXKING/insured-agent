@@ -1,9 +1,16 @@
 # %%
 import os
 import requests
+from pydantic import BaseModel, Field
 from langchain.tools import tool, ToolRuntime
 # %%
-@tool
+class SendMessageInput(BaseModel):
+    message: str = Field(
+        ...,
+        description="要发送的消息内容",
+    )
+# %%
+@tool(args_schema=SendMessageInput)
 def send_message(message: str, runtime: ToolRuntime) -> str:
     """向当前所在的群聊发送消息。"""
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
