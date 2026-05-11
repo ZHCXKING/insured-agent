@@ -88,11 +88,16 @@ class ClientBaseInput(BaseModel):
     total_liabilities: int = Field(default=0, description="总负债额", ge=0)
     # 补充字段
     init_payment_method: List[str] = Field(default_factory=list, description="首期供款付款方式")
-    channel_id: str = Field(default="0", description="归属渠道用户ID")
+    channel_id: str = Field(default="", description="归属渠道用户ID")
     remark: str = Field(default="", description="备注")
 # %%
 class CreateClientInput(ClientBaseInput):
     name: str = Field(..., description="姓名")
+    @model_validator(mode='after')
+    def check_required_fields(self) -> 'CreateClientInput':
+        if not self.id_number and not self.hk_id_number:
+            raise ValueError("创建客户必须提供内地身份证号(id_number)或香港身份证号(hk_id_number)，至少提供一个")
+        return self
 # %%
 class UpdateClientInput(ClientBaseInput):
     client_id: str = Field(..., description="客户ID")
@@ -139,7 +144,7 @@ def match_client(id_number: str = "", hk_id_number: str = "") -> str:
 @tool(args_schema=CreateClientInput)
 def create_client(**kwargs) -> str:
     """
-    在指定机构下创建客户。至少应提供 name。
+    在指定机构下创建客户。至少应提供 name，id_number或者hk_id_number。
     """
     base_url = os.getenv("ORGANIZATION_URL")
     api_key = os.getenv("ORGANIZATION_KEY")

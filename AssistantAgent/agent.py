@@ -12,7 +12,8 @@ from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
 from utils import get_image_type
-from AssistantAgent.tools import send_message, schedule_message_delayed, match_client, search_users, create_client, update_client, create_appointment, update_appointment, search_companies, search_products, create_policy, update_policy
+from AssistantAgent.tools import send_message, schedule_message_delayed
+from AssistantAgent.subagents import appointment_subagent
 # %%
 logger = logging.getLogger("Assistant")
 # %%
@@ -77,8 +78,9 @@ class AssistantAgent:
         )
     # %%
     def _setup_prompt(self):
-        self.prompt = """
-        你是Assistant，一个专业的许可助手。
+        self.prompt = """你是Assistant，一个专业的助手。
+
+当用户需要创建或更新任何业务信息（客户、保单、预约等）时，必须委派给 appointment_agent 子代理处理，不要自行调用业务工具。
         """
     # %%
     def _create_agent(self):
@@ -90,7 +92,8 @@ class AssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[send_message, schedule_message_delayed, match_client, search_users, create_client, update_client, create_appointment, update_appointment, search_companies, search_products, create_policy, update_policy],
+            tools=[send_message, schedule_message_delayed],
+            subagents=[appointment_subagent],
             skills=["/skills/"],
             system_prompt=system_prompt,
             permissions = [
@@ -101,7 +104,7 @@ class AssistantAgent:
     def process_message(self, text: str, sender: str, group: str) -> str:
         """处理单条数据"""
         context = GroupChatContext(group_name=group, sender_name=sender)
-        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}}
+        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 15}
         result = self.agent.invoke(
             {"messages": [{"role": "user", "content": text}]},
             context=context,
@@ -130,7 +133,7 @@ class AssistantAgent:
         combined_content.insert(0, {"type": "text", "text": prompt})
         messages = [{"role": "user", "content": combined_content}]
         context = GroupChatContext(group_name=group, sender_name=sender)
-        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}}
+        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 15}
         result = self.agent.invoke(
             {"messages": messages},
             context=context,

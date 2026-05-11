@@ -57,24 +57,14 @@ def handle_message(data, agent):
     except Exception as e:
         logger.error(f"处理消息失败: {e}")
 # %%
-@app.route('/assistant/message', methods=['POST'])
+@app.route('/message', methods=['POST'])
 def assistant_message():
     data = request.json
     if not data:
         return jsonify({"code": -1, "message": "无有效数据"}), 400
-    thread = threading.Thread(target=handle_message, args=(data, AA_agent))
-    thread.start()
-    return jsonify({
-        "code": 0,
-        "message": "success"
-    })
-# %%
-@app.route('/greatgroup/message', methods=['POST'])
-def greatgroup_message():
-    data = request.json
-    if not data:
-        return jsonify({"code": -1, "message": "无有效数据"}), 400
-    thread = threading.Thread(target=handle_message, args=(data, GGA_agent))
+    group_name = data.get("groupName", "")
+    agent = GGA_agent if "support" in group_name.lower() else AA_agent
+    thread = threading.Thread(target=handle_message, args=(data, agent))
     thread.start()
     return jsonify({
         "code": 0,

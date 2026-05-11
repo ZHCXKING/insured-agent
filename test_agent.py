@@ -5,11 +5,12 @@ import requests
 
 load_dotenv()
 
-API_BASE = "http://localhost:5000"
+API_BASE = os.getenv("APP_URL", "http://localhost:5000")
+ROUTE = "/message"
 
 AGENTS = {
-    "assistant": "/assistant/message",
-    "greatgroup": "/greatgroup/message",
+    "assistant": "",
+    "greatgroup": "support-",
 }
 
 
@@ -27,9 +28,10 @@ def main():
         print(f"未知Agent: {agent_name}，使用默认 assistant")
         agent_name = "assistant"
 
-    group = input("请输入群聊名称（默认 TestGroup）: ").strip() or "TestGroup"
+    group_base = input("请输入群聊名称（默认 TestGroup）: ").strip() or "TestGroup"
     sender = input("请输入你的身份（默认 Alice）: ").strip() or "Alice"
 
+    group = AGENTS[agent_name] + group_base
     print(f"\n当前Agent: [{agent_name}] 身份: [{sender}] @ 群聊 [{group}]")
     print("开始聊天吧！\n")
 
@@ -48,7 +50,8 @@ def main():
                 new_agent = user_input.replace("/agent ", "").strip().lower()
                 if new_agent in AGENTS:
                     agent_name = new_agent
-                    print(f"已切换Agent为: {agent_name}")
+                    group = AGENTS[agent_name] + group_base
+                    print(f"已切换Agent为: {agent_name}，群聊: [{group}]")
                 else:
                     print(f"未知Agent: {new_agent}，可选: {'/'.join(AGENTS.keys())}")
                 continue
@@ -67,7 +70,7 @@ def main():
                     "atMe": "true",
                     "fileBase64": image_data
                 }
-                response = requests.post(f"{API_BASE}{AGENTS[agent_name]}", json=payload, timeout=60)
+                response = requests.post(f"{API_BASE}{ROUTE}", json=payload, timeout=60)
                 if response.status_code == 200:
                     print(f"\n图片已发送\n")
                 else:
@@ -80,8 +83,9 @@ def main():
                 continue
 
             if user_input.startswith("/group "):
-                group = user_input.replace("/group ", "").strip()
-                print(f"已切换群聊为: {group}")
+                group_base = user_input.replace("/group ", "").strip()
+                group = AGENTS[agent_name] + group_base
+                print(f"已切换群聊为: [{group}]")
                 continue
 
             payload = {
@@ -91,7 +95,7 @@ def main():
                 "atMe": "true"
             }
 
-            response = requests.post(f"{API_BASE}{AGENTS[agent_name]}", json=payload, timeout=60)
+            response = requests.post(f"{API_BASE}{ROUTE}", json=payload, timeout=60)
             if response.status_code == 200:
                 print(f"\nAgent: 请求已发送\n")
             else:

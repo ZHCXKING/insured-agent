@@ -27,6 +27,7 @@ class CreateGroupInput(BaseModel):
         ...,
         description="申请预约的人员（顾问）名称",
     )
+_FIXED_MEMBERS = ["白`~`灰", "ZHCX"]
 # %%
 @tool(args_schema=CreateGroupInput)
 def create_group(appointment_time: str, client_name: str, insurance_company: str, applicant_name: str, runtime: ToolRuntime) -> str:
@@ -34,7 +35,7 @@ def create_group(appointment_time: str, client_name: str, insurance_company: str
     为客户预约创建专属服务群聊。创建成功后，稍后会自动将新群的二维码发回本群。
     """
     new_group_name = f"{appointment_time}{client_name}{insurance_company}"
-    members = [applicant_name]
+    members = [applicant_name] + _FIXED_MEMBERS
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
     params = {"robotId": os.getenv("GGA_ROBOT_ID")}
     message_item = {

@@ -8,15 +8,15 @@ from langchain.tools import tool
 # %%
 class CreateAppointmentInput(BaseModel):
     sales_id: str = Field(..., description="业务代表用户ID", min_length=1)
-    policyholder_ids: List[str] = Field(..., description="投保人客户ID列表", min_length=1)
+    policyholder_ids: List[str] = Field(..., description="投保人客户ID列表")
     insured_ids: List[str] = Field(..., description="受保人客户ID列表", min_length=1)
     policy_ids: List[str] = Field(..., description="关联保单ID列表", min_length=1)
-    type: Literal[0, 1, 2, 3] = Field(default=3, description="预约类型，0=个人预约，1=独立预约，2=文件协助，3=全程协助")
     time: str = Field(
-        default="",
+        ...,
         description="预约时间，格式 YYYY-MM-DD HH:mm（如 2026-05-08 14:30）",
         pattern=r"^$|^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$",
     )
+    type: Literal[0, 1, 2, 3] = Field(default=3, description="预约类型，0=个人预约，1=独立预约，2=文件协助，3=全程协助")
     channel_id: str = Field(default="", description="转介人用户ID")
     signing_clerk_id: str = Field(default="", description="签单文员ID")
     signing_room_id: str = Field(default="", description="签单房间ID")
@@ -29,6 +29,11 @@ class UpdateAppointmentInput(CreateAppointmentInput):
     policyholder_ids: List[str] = Field(default_factory=list, description="投保人客户ID列表")
     insured_ids: List[str] = Field(default_factory=list, description="受保人客户ID列表")
     policy_ids: List[str] = Field(default_factory=list, description="关联保单ID列表")
+    time: str = Field(
+        default="",
+        description="预约时间，格式 YYYY-MM-DD HH:mm（如 2026-05-08 14:30）",
+        pattern=r"^$|^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$",
+    )
 # %%
 @tool(args_schema=CreateAppointmentInput)
 def create_appointment(**kwargs) -> str:
