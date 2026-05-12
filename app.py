@@ -11,6 +11,7 @@ load_dotenv()
 # %%
 from AssistantAgent.agent import AssistantAgent
 from GreatGroupAgent.agent import GreatGroupAgent
+from LicenseAssistant.agent import LicenseAssistantAgent
 from utils import reply_message, send_image
 # %%
 logging.basicConfig(level=logging.INFO)
@@ -22,6 +23,8 @@ AA_agent = AssistantAgent()
 AA_agent.robot_id = os.getenv("AA_ROBOT_ID")
 GGA_agent = GreatGroupAgent()
 GGA_agent.robot_id = os.getenv("GGA_ROBOT_ID")
+LA_agent = LicenseAssistantAgent()
+LA_agent.robot_id = os.getenv("LA_ROBOT_ID")
 # %%
 def handle_message(data, agent):
     try:
@@ -65,7 +68,13 @@ def assistant_message():
     if not data:
         return jsonify({"code": -1, "message": "无有效数据"}), 400
     group_name = data.get("groupName", "")
-    agent = GGA_agent if "support" in group_name.lower() else AA_agent
+    # todo 下面这里定义群名的转发规则，测试转发是否正确
+    if "预备" in group_name:
+        agent = LA_agent
+    elif "Support" in group_name:
+        agent = GGA_agent
+    else:
+        agent = AA_agent
     thread = threading.Thread(target=handle_message, args=(data, agent))
     thread.start()
     return jsonify({

@@ -3,6 +3,7 @@ import os
 import json
 import redis
 import requests
+from typing import List
 from pydantic import BaseModel, Field
 from langchain.tools import tool, ToolRuntime
 # %%
@@ -12,29 +13,30 @@ redis_client = redis.from_url(redis_url, decode_responses=True)
 class CreateGroupInput(BaseModel):
     appointment_time: str = Field(
         ...,
-        description="预约的日期，必须符合 YYYY.M.D 格式，例如 2026.4.23",
+        description="预约日期，必须符合 YYYY.M.D 格式，例如 2026.4.23",
         pattern=r"^\d{4}\.\d{1,2}\.\d{1,2}$",
     )
     client_name: str = Field(
         ...,
         description="客户的姓名",
     )
-    insurance_company: str = Field(
+    insurance_companies: List[str] = Field(
         ...,
-        description="保险公司名称",
+        description="保险公司名称列表。",
     )
     applicant_name: str = Field(
         ...,
         description="申请预约的人员（顾问）名称",
     )
+# todo 这里是拉群的固定成员
 _FIXED_MEMBERS = ["白`~`灰", "ZHCX"]
 # %%
 @tool(args_schema=CreateGroupInput)
-def create_group(appointment_time: str, client_name: str, insurance_company: str, applicant_name: str, runtime: ToolRuntime) -> str:
+def create_group(appointment_time: str, client_name: str, insurance_companies: List[str], applicant_name: str, runtime: ToolRuntime) -> str:
     """
-    为客户预约创建专属服务群聊。创建成功后，稍后会自动将新群的二维码发回本群。
+    为客户预约创建专属服务群聊。如果有多个日期，需要多次调用此工具。创建成功后，稍后会自动将新群的二维码发回本群。
     """
-    new_group_name = f"{appointment_time}{client_name}{insurance_company}"
+    new_group_name = f"{appointment_time}{client_name}{'+'.join(insurance_companies)}"
     members = [applicant_name] + _FIXED_MEMBERS
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
     params = {"robotId": os.getenv("GGA_ROBOT_ID")}
