@@ -25,6 +25,7 @@ GGA_agent.robot_id = os.getenv("GGA_ROBOT_ID")
 # %%
 def handle_message(data, agent):
     try:
+        # todo 实际生产的时候，将print语句移除掉
         print(data)
         spoken = data.get("spoken")
         sender = data.get("receivedName")
@@ -43,7 +44,7 @@ def handle_message(data, agent):
             redis_client.expire(cache_key, 259200)
             return
         lock_key = f"lock:{agent.app_name}_group:{group}"
-        lock = redis_client.lock(lock_key, timeout=120, blocking_timeout=60)
+        lock = redis_client.lock(lock_key, timeout=300, blocking_timeout=300)
         with lock:
             cached_history_list = redis_client.lrange(cache_key, 0, -1)
             redis_client.ltrim(cache_key, len(cached_history_list), -1)
@@ -75,6 +76,7 @@ def assistant_message():
 @app.route('/QRcode', methods=['POST'])
 def QRcode():
     data = request.json
+    # todo 实际生产的时候，将print语句移除掉
     print(data)
     if not data:
         return jsonify({"code": -1, "message": "无有效数据"}), 400
