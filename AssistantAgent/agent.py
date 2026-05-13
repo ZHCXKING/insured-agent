@@ -12,7 +12,7 @@ from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
 from utils import get_image_type
-from AssistantAgent.tools import send_message, schedule_message_delayed, get_current_time
+from AssistantAgent.tools import send_message, schedule_message_delayed, get_current_time, get_appointment_information
 from AssistantAgent.subagents import appointment_subagent
 # %%
 logger = logging.getLogger("Assistant")
@@ -92,7 +92,7 @@ class AssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[send_message, schedule_message_delayed, get_current_time],
+            tools=[send_message, schedule_message_delayed, get_current_time, get_appointment_information],
             subagents=[appointment_subagent],
             skills=["/skills/"],
             system_prompt=system_prompt,

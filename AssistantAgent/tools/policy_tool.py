@@ -3,7 +3,7 @@ import os
 import requests
 from datetime import datetime
 from typing import List, Literal, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from langchain.tools import tool
 # %%
 class SearchCompaniesInput(BaseModel):
@@ -29,14 +29,14 @@ class CreatePolicyInput(BaseModel):
     prepaid_premium: bool = Field(..., description="是否预缴保费")
     no: str = Field(default="", description="保单号")
     applicant_id: str = Field(..., description="投保人客户ID")
-    insurant_id: str = Field(default="", description="受保人客户ID")
+    insurant_id: str = Field(..., description="受保人客户ID")
     insured_policyholder_relation: Literal[0, 1, 2, 3, 4, 5, 6, 7, 8] = Field(
         default=0,
         description="受保人与投保人关系，0=未设置，1=本人，2=父母，3=子女，4=配偶，5=兄弟姐妹，6=祖父母，7=雇员，8=其他",
     )
     signing_clerk_id: str = Field(default="", description="签单文员用户ID")
     channel_id: str = Field(default="", description="转介人用户ID")
-    sales_id: str = Field(default="", description="业务代表用户ID")
+    sales_id: str = Field(..., description="业务代表用户ID")
     applied_at: str = Field(
         default="",
         description="签单日，格式 YYYY-MM-DD",
@@ -147,7 +147,7 @@ def search_products(**kwargs) -> str:
 @tool(args_schema=CreatePolicyInput)
 def create_policy(**kwargs) -> str:
     """
-    在指定机构下创建保单。必填：保险公司ID、产品SKU ID、保费、供款年期、是否预缴。
+    在指定机构下创建保单。必填：保险公司ID、产品SKU ID、保费、供款年期、是否预缴、投保人ID、受保人ID、业务代表ID。
     """
     base_url = os.getenv("ORGANIZATION_URL")
     api_key = os.getenv("ORGANIZATION_KEY")
@@ -186,7 +186,6 @@ def create_policy(**kwargs) -> str:
     if premium_time:
         dt = datetime.strptime(premium_time, "%Y-%m-%d")
         payload["premium_time"] = int(dt.timestamp())
-
     response = requests.post(url, json=payload, headers=headers, timeout=15)
     if response.status_code != 200:
         return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"

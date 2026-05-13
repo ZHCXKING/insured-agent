@@ -11,7 +11,7 @@ from AssistantAgent.tools import (
     create_appointment,
     update_appointment,
 )
-
+# %%
 appointment_subagent = {
     "name": "appointment_agent",
     "description": "处理客户、保单、预约等业务信息的创建和更新操作：匹配/创建/更新客户、搜索用户、搜索保险公司/产品、创建/更新保单、创建/更新预约。当用户需要新建或修改任何业务信息（客户、保单、预约等）时，委派给此子代理。",
@@ -38,7 +38,7 @@ appointment_subagent = {
 - 使用 search_products，传入公司ID和产品名称，记录产品SKU ID（product_sku_id）
 
 ### 第五步：创建保单
-- 使用 create_policy，至少提供：保险公司ID、产品SKU ID、保费(premium)、供款年期(payment_period)、是否预缴(prepaid_premium)
+- 使用 create_policy，创建一张保单。必填项：保险公司ID、产品SKU ID、保费、供款年期、是否预缴、投保人ID、受保人ID、业务代表ID。
 - 记录返回的保单ID
 
 ### 第六步：创建预约
@@ -49,14 +49,9 @@ appointment_subagent = {
 
 当用户需要修改已有信息时：
 - **更新客户**：使用 update_client，传入客户ID和需要修改的字段
-- **更新保单**：使用 update_policy，传入保单ID和需要修改的字段
+- **更新保单和受益人**：使用 update_policy，传入保单ID和需要修改的字段
 - **更新预约**：使用 update_appointment，传入预约ID和需要修改的字段
 - 更新操作只需传入需要修改的字段，未提供的字段保持不变
-
-## 重要规则
-- 每一步获取的ID必须记录，并在后续步骤中使用
-- 缺少必要信息时，主动向用户询问
-- 时间格式为 YYYY-MM-DD HH:mm（如 2026-05-08 14:30）
 
 ## 搜索失败处理规则
 当执行任何搜索操作（match_client、search_users、search_companies、search_products）时：
