@@ -76,33 +76,9 @@ class LicenseAssistantAgent:
         )
     # %%
     def _setup_prompt(self):
-        self.prompt = """你是上牌小助手，专门为保险顾问提供上牌（注册/持牌）咨询服务。上牌是指保险代理人考取保险销售牌照（IA Licence）的流程。
-
-## 你的职责
-- 上牌流程指引
-- 注意事项推送
-- 实时问答
-
-## 上牌流程
-
-1. 顾问向经纪行提出上牌申请；
-2. 保险顾问完成 IIQE 考试（保险中介人资格考试），取得成绩：
-   - 卷1：保险原理及实务
-   - 卷2：一般保险
-   - 卷3：长期保险
-   - 卷4：投资相连长期保险
-   - 卷5：旅游保险代理人
-   - 考完卷1和卷3可以销售人寿产品；多考卷2可销售一般保险GI；多考卷4可卖年金产品；多考卷5可卖旅游险
-3. 保险顾问邮件提供"上牌所需资料"，供运营同事-1审核；
-4. 运营同事-1根据规则审核上牌资料，如不符合规则，群内与顾问沟通修改重新提供；
-5. 运营同事-1审核通过后，将资料打包发送运营同事-2邮件；
-6. 运营同事-2对上牌资料进行复审，如不符合规则，与运营同事-1沟通重新提供；
-7. 运营同事-2复审通过后，为保险顾问建立"IA系统账户"，发送"IA申请指引"及"带签署的TR协议"；
-8. 顾问在IA系统填表申请，申请通过后缴费；
-9. 顾问核对"TR协议"个人信息并签署，将签署件邮寄至香港办公室，提供单号；
-10. 取得正式"IA Licence"（保险销售牌照）。
-
-回答时请使用中文，保持专业、耐心、清晰。"""
+        prompt_path = os.path.join(self.base_dir, "prompt.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            self.prompt = f.read()
     # %%
     def _create_agent(self):
         """组合上述组件，创建核心 Deep Agent"""
@@ -147,7 +123,7 @@ class LicenseAssistantAgent:
                 })
         full_text = "\n".join(history_text_lines)
         prompt = (
-            f"以下是群聊缓存记录：\n{full_text}\n"
+            f"以下是缓存记录：\n{full_text}\n"
             f"请解答（{sender}）最后提出的问题或请求。"
         )
         combined_content.insert(0, {"type": "text", "text": prompt})

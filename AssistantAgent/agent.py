@@ -78,10 +78,9 @@ class AssistantAgent:
         )
     # %%
     def _setup_prompt(self):
-        self.prompt = """你是Assistant，一个专业的助手。
-
-当用户需要创建或更新任何业务信息（客户、保单、预约等）时，必须委派给 appointment_agent 子代理处理，不要自行调用业务工具。
-        """
+        prompt_path = os.path.join(self.base_dir, "prompt.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            self.prompt = f.read()
     # %%
     def _create_agent(self):
         """组合上述组件，创建核心 Deep Agent"""
@@ -127,7 +126,7 @@ class AssistantAgent:
                 })
         full_text = "\n".join(history_text_lines)
         prompt = (
-            f"以下是群聊缓存记录：\n{full_text}\n"
+            f"以下是缓存记录：\n{full_text}\n"
             f"请解答（{sender}）最后提出的问题或请求。"
         )
         combined_content.insert(0, {"type": "text", "text": prompt})

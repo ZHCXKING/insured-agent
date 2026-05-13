@@ -2,7 +2,7 @@
 import os
 import requests
 import redis
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
 from pydantic import BaseModel, Field
 from langchain.tools import tool, ToolRuntime
 from apscheduler.schedulers.background import BackgroundScheduler
@@ -19,11 +19,10 @@ jobstores = {
         run_times_key='scheduler:run_times'
     )
 }
-scheduler = BackgroundScheduler(jobstores=jobstores)
+scheduler = BackgroundScheduler(jobstores=jobstores, timezone=timezone(timedelta(hours=8)))
 scheduler.start()
 # %%
 def execute_send_task(group_name: str, message: str):
-    """具体的发送动作"""
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
     params = {"robotId": os.getenv("AA_ROBOT_ID")}
     message_item = {
@@ -53,7 +52,7 @@ class ScheduleMessageInput(BaseModel):
 # %%
 @tool(args_schema=ScheduleMessageInput)
 def schedule_message_delayed(message: str, scheduled_time: str, runtime: ToolRuntime) -> str:
-    """在指定时间向当前群聊发送消息。"""
+    """调用这个工具可以在指定时间发送消息。"""
     group_name = runtime.context.group_name
     run_date = datetime.strptime(scheduled_time, "%Y-%m-%d %H:%M")
     if run_date <= datetime.now():

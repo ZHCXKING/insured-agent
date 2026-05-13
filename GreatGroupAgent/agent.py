@@ -77,11 +77,9 @@ class GreatGroupAgent:
         )
     # %%
     def _setup_prompt(self):
-        self.prompt = """你是一个专门用来判断是否创建群聊的助手。当顾问有预约的需求时，使用 create_group 工具为顾问创建专属服务群聊。如果顾问没有明确的预约需求，则直接回复顾问即可。
-
-## 创建群聊规则
-- 同一日期只创建一个群聊，多个日期则创建多个群聊，每个日期一个群
-        """
+        prompt_path = os.path.join(self.base_dir, "prompt.txt")
+        with open(prompt_path, "r", encoding="utf-8") as f:
+            self.prompt = f.read()
     # %%
     def _create_agent(self):
         """组合上述组件，创建核心 Deep Agent"""
@@ -126,7 +124,7 @@ class GreatGroupAgent:
                 })
         full_text = "\n".join(history_text_lines)
         prompt = (
-            f"以下是群聊缓存记录：\n{full_text}\n"
+            f"以下是缓存记录：\n{full_text}\n"
             f"请解答（{sender}）最后提出的问题或请求。"
         )
         combined_content.insert(0, {"type": "text", "text": prompt})

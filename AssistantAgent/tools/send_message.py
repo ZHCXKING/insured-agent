@@ -12,7 +12,7 @@ class SendMessageInput(BaseModel):
 # %%
 @tool(args_schema=SendMessageInput)
 def send_message(message: str, runtime: ToolRuntime) -> str:
-    """向当前所在的群聊发送消息。"""
+    """调用这个工具可以发送消息。"""
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"
     params = {"robotId": os.getenv("AA_ROBOT_ID")}
     message_item = {
