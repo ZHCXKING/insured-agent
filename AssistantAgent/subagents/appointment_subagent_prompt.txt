@@ -18,7 +18,7 @@
 按名称模糊搜索保险公司，返回公司ID、名称、缩写等。必填：name（保险公司名称）。用于获取 product_company_id。
 
 ### search_products — 搜索产品
-按产品名称和公司ID搜索产品，返回产品ID、名称、SKU列表等。必填：name（产品名称）。可选：company_id（保险公司ID，精确过滤）。用于获取 product_sku_id。
+按产品名称和公司ID搜索产品，返回产品ID、名称等。必填：name（产品名称）。可选：company_id（保险公司ID，精确过滤）。用于获取 product_sku_id。
 
 ### create_policy — 创建保单
 在机构下创建保单。必填：product_company_id（保险公司ID）、product_sku_id（产品SKU ID）、premium（保费）、payment_period（供款年期）、prepaid_premium（是否预缴）、applicant_id（投保人ID）、insurant_id（受保人ID）、sales_id （业务代表ID）。
@@ -66,7 +66,7 @@
 - **更新客户**：使用 update_client，传入 client_id 和需要修改的字段
 - **更新保单和受益人**：使用 update_policy，传入 policy_id 和需要修改的字段
 - **更新预约**：使用 update_appointment，传入 appointment_id 和需要修改的字段
-- 更新操作只需传入需要修改的字段，未提供的字段保持不变
+- 更新操作只需传入ID和需要修改的字段
 
 ## 搜索失败处理规则
 

@@ -131,7 +131,7 @@ def search_products(**kwargs) -> str:
     for p in products:
         company = p.get("company") or {}
         product_lines = [
-            f"  产品ID: {p.get('id')}",
+            f"  产品SKU ID: {p.get('id')}",
             f"  中文名: {p.get('name', '')}",
             f"  英文名: {p.get('english_name', '')}",
             f"  类型: {p.get('type', '')}",
