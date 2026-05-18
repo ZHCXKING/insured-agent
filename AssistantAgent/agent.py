@@ -11,7 +11,7 @@ from langgraph.checkpoint.redis import RedisSaver
 from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
-from utils import get_image_type
+from utils import get_image_type, sanitize_namespace
 from AssistantAgent.tools import send_message, schedule_message_delayed, get_current_time, get_appointment_information
 from AssistantAgent.subagents import appointment_subagent
 # %%
@@ -61,7 +61,7 @@ class AssistantAgent:
         self.backend = CompositeBackend(
             default=StateBackend(),
             routes={
-                "/memories/": StoreBackend(namespace=lambda rt: ("Assistant", rt.context.group_name,),),
+                "/memories/": StoreBackend(namespace=lambda rt: ("Assistant", sanitize_namespace(rt.context.group_name),),),
                 "/skills/": FilesystemBackend(root_dir=self.skills_dir, virtual_mode=True),
             }
         )
@@ -103,7 +103,7 @@ class AssistantAgent:
     def process_message(self, text: str, sender: str, group: str) -> str:
         """处理单条数据"""
         context = GroupChatContext(group_name=group, sender_name=sender)
-        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 15}
+        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
             {"messages": [{"role": "user", "content": text}]},
             context=context,
@@ -132,7 +132,7 @@ class AssistantAgent:
         combined_content.insert(0, {"type": "text", "text": prompt})
         messages = [{"role": "user", "content": combined_content}]
         context = GroupChatContext(group_name=group, sender_name=sender)
-        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 15}
+        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
             {"messages": messages},
             context=context,

@@ -11,7 +11,8 @@ from langgraph.checkpoint.redis import RedisSaver
 from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
 from psycopg_pool import ConnectionPool
-from utils import get_image_type
+from utils import get_image_type, sanitize_namespace
+from .tools import retrieve_knowledge, send_wedrive_file, send_message
 # %%
 logger = logging.getLogger("LicenseAssistant")
 # %%
@@ -59,7 +60,7 @@ class LicenseAssistantAgent:
         self.backend = CompositeBackend(
             default=StateBackend(),
             routes={
-                "/memories/": StoreBackend(namespace=lambda rt: ("LicenseAssistant", rt.context.group_name,),),
+                "/memories/": StoreBackend(namespace=lambda rt: ("LicenseAssistant", sanitize_namespace(rt.context.group_name),),),
                 "/skills/": FilesystemBackend(root_dir=self.skills_dir, virtual_mode=True),
             }
         )
@@ -89,7 +90,7 @@ class LicenseAssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[],
+            tools=[retrieve_knowledge, send_wedrive_file, send_message],
             skills=["/skills/"],
             system_prompt=system_prompt,
             permissions = [
@@ -100,7 +101,7 @@ class LicenseAssistantAgent:
     def process_message(self, text: str, sender: str, group: str) -> str:
         """处理单条数据"""
         context = GroupChatContext(group_name=group, sender_name=sender)
-        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 15}
+        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
             {"messages": [{"role": "user", "content": text}]},
             context=context,
@@ -129,7 +130,7 @@ class LicenseAssistantAgent:
         combined_content.insert(0, {"type": "text", "text": prompt})
         messages = [{"role": "user", "content": combined_content}]
         context = GroupChatContext(group_name=group, sender_name=sender)
-        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 15}
+        config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
             {"messages": messages},
             context=context,

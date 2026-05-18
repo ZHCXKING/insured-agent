@@ -36,7 +36,7 @@ def search_users(**kwargs) -> str:
     if response.status_code != 200:
         return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
     data = response.json()
-    users = data.get("data", [])
+    users = data.get("Data_process", [])
     pagination = data.get("pagination", {})
     if not users:
         return "未搜索到匹配的用户。"

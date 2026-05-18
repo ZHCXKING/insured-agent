@@ -61,6 +61,9 @@ def handle_message(data, agent):
         reply_message(reply, group, agent.robot_id)
     except Exception as e:
         logger.error(f"处理消息失败: {e}")
+        group = data.get("groupName")
+        if group:
+            reply_message("抱歉，消息处理失败，请稍后重试或联系运营同事处理。", group, agent.robot_id)
 # %%
 @app.route('/message', methods=['POST'])
 def assistant_message():

@@ -16,6 +16,8 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+    volumes:
+      - ./Data_process/chroma_db:/app/Data_process/chroma_db
 
   redis:
     image: redis/redis-stack:7.4.0-v8

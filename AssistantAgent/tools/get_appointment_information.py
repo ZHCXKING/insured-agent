@@ -27,7 +27,7 @@ def get_appointment_information(**kwargs) -> str:
     if response.status_code != 200:
         return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
     resp = response.json()
-    data = resp.get("data", resp)
+    data = resp.get("Data_process", resp)
     _status_map = {0: "草稿", 1: "审核中", 2: "预约中", 3: "确认预约", 4: "签单完成", 5: "取消投保", 6: "拒绝申请"}
     _process_map = {0: "基础信息", 1: "客户信息", 2: "保单信息"}
     _type_map = {0: "个人预约", 1: "独立预约", 2: "文件协助", 3: "全程协助"}
