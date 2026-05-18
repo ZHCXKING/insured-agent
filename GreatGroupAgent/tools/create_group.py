@@ -3,6 +3,7 @@ import os
 import json
 import redis
 import requests
+from datetime import datetime, timezone, timedelta
 from typing import List
 from pydantic import BaseModel, Field
 from langchain.tools import tool, ToolRuntime
@@ -36,6 +37,13 @@ def create_group(appointment_time: str, client_name: str, insurance_companies: L
     """
     为客户预约创建专属服务群聊。如果有多个日期，需要多次调用此工具。创建成功后，稍后会自动将新群的二维码发回本群。
     """
+    try:
+        appt_date = datetime.strptime(appointment_time, "%Y.%m.%d").date()
+    except ValueError:
+        return "预约日期格式错误，请使用 YYYY.M.D 格式，例如 2026.5.20"
+    today = datetime.now(timezone(timedelta(hours=8))).date()
+    if appt_date < today:
+        return f"预约日期 {appointment_time} 是过去的日期，请提供未来的日期。"
     new_group_name = f"{appointment_time}{client_name}{'+'.join(insurance_companies)}"
     members = [applicant_name] + _FIXED_MEMBERS
     url = "https://api.worktool.ymdyes.cn/wework/sendRawMessage"

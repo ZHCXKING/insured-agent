@@ -88,7 +88,7 @@ def search_companies(**kwargs) -> str:
     if response.status_code != 200:
         return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
     data = response.json()
-    companies = data.get("Data_process", [])
+    companies = data.get("data", [])
     if not companies:
         return "未搜索到匹配的保险公司。"
     lines = []
@@ -124,7 +124,7 @@ def search_products(**kwargs) -> str:
     if response.status_code != 200:
         return f"错误：请求失败，HTTP {response.status_code}，响应：{response.text}"
     data = response.json()
-    products = data.get("Data_process", [])
+    products = data.get("data", [])
     if not products:
         return "未搜索到匹配的产品。"
     lines = []
