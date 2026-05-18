@@ -7,10 +7,10 @@ from pydantic import BaseModel, Field, model_validator
 from langchain.tools import tool
 # %%
 class SearchCompaniesInput(BaseModel):
-    name: str = Field(..., description="保险公司名称（模糊匹配中文名/英文名）")
+    search: str = Field(..., description="保险公司名称（模糊匹配中文名/英文名）")
 # %%
 class SearchProductsInput(BaseModel):
-    name: str = Field(..., description="产品名称（模糊匹配中文名/英文名）")
+    search: str = Field(..., description="产品名称（模糊匹配中文名/英文名）")
     company_id: str = Field(default="", description="保险公司ID（精确过滤，可通过 search_companies 获取）")
 # %%
 class BeneficiaryInput(BaseModel):
@@ -25,6 +25,7 @@ class CreatePolicyInput(BaseModel):
     product_company_id: str = Field(..., description="保险公司ID（通过 search_companies 获取）")
     product_sku_id: str = Field(..., description="产品SKU ID（通过 search_products 获取产品详情后取得）")
     premium: float = Field(..., description="当期保费", ge=0)
+    currency: str = Field(..., description="币种，如 HKD/USD/CNY")
     payment_period: int = Field(..., description="供款年期", ge=1)
     prepaid_premium: bool = Field(..., description="是否预缴保费")
     no: str = Field(default="", description="保单号")
@@ -47,7 +48,6 @@ class CreatePolicyInput(BaseModel):
         description="当前应缴日，格式 YYYY-MM-DD",
         pattern=r"^$|^\d{4}-\d{2}-\d{2}$",
     )
-    currency: str = Field(default="HKD", description="币种，如 HKD/USD/CNY")
     renewal_plan: Literal["", "Single", "Annual", "HalfYearly", "Quarterly"] = Field(
         default="",
         description="续保计划，Single=一次性，Annual=年缴，HalfYearly=半年缴，Quarterly=季缴",
@@ -65,6 +65,7 @@ class UpdatePolicyInput(CreatePolicyInput):
     product_company_id: str = Field(default="", description="保险公司ID")
     product_sku_id: str = Field(default="", description="产品SKU ID")
     applicant_id: str = Field(default="", description="投保人客户ID")
+    currency: str = Field(default="", description="币种，如 HKD/USD/CNY")
     premium: Optional[float] = Field(default=None, description="当期保费", ge=0)
     payment_period: Optional[int] = Field(default=None, description="供款年期", ge=1)
     prepaid_premium: Optional[bool] = Field(default=None, description="是否预缴保费")

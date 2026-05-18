@@ -42,20 +42,6 @@ description: 当顾问询问预约所需信息、预约模版、签单流程，�
 2. 使用 `task` 工具，将任务委托给名为 `appointment_agent` 的子代理
 3. 在 `task` 的描述中，将提取出的所有结构化信息传入，让子代理执行操作
 
-### 提取字段对照
+### 字段参考
 
-| 顾问填写项 | 系统字段 | 所属工具 |
-|---|---|---|
-| 投保人姓名 | name | create_client |
-| 投保人身份证号 | id_number / hk_id_number | create_client |
-| 投保人姓名拼音 | english_name | create_client |
-| 受保人信息 | 同投保人字段 | create_client（若与投保人不同则单独创建） |
-| 业务代表姓名 | search → sales_id | search_users |
-| 转介人姓名 | search → channel_id | search_users |
-| 保险公司名称 | search → product_company_id | search_companies |
-| 投保产品名称 | search → product_sku_id | search_products |
-| 保费金额 | premium | create_policy |
-| 供款年期 | payment_period | create_policy |
-| 是否预缴 | prepaid_premium | create_policy |
-| 预约日期+时间 | time | create_appointment |
-| 受益人信息 | beneficiaries | create_policy |
+请读取同目录下的 `field_reference.md` 文件，该文件包含所有工具的完整字段定义（字段名、类型、是否必填、说明、可选值等）。在解析顾问信息时参考此文档，确保字段映射正确。

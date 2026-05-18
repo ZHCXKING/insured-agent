@@ -14,7 +14,7 @@ def start_ngrok():
     port = int(os.getenv("PORT"))
     token = os.getenv("NGROK_AUTHTOKEN")
     try:
-        listener = ngrok.forward(port, authtoken=token)
+        listener = ngrok.forward(port, authtoken=token, scheme="http")
         print(f"本地目标: http://localhost:{port}")
         print(f"公网地址: {listener.url()}")
         stop_event = threading.Event()

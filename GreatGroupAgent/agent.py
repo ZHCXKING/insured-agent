@@ -10,9 +10,10 @@ from deepagents.backends.filesystem import FilesystemBackend
 from langgraph.checkpoint.redis import RedisSaver
 from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage
 from psycopg_pool import ConnectionPool
 from utils import get_image_type, sanitize_namespace
-from GreatGroupAgent.tools import create_group
+from GreatGroupAgent.tools import create_group, get_current_time
 # %%
 logger = logging.getLogger("GreatGroup")
 # %%
@@ -90,7 +91,7 @@ class GreatGroupAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[create_group],
+            tools=[create_group, get_current_time],
             skills=["/skills/"],
             system_prompt=system_prompt,
             permissions = [
@@ -103,7 +104,7 @@ class GreatGroupAgent:
         context = GroupChatContext(group_name=group, sender_name=sender)
         config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
-            {"messages": [{"role": "user", "content": text}]},
+            {"messages": [HumanMessage(content=text)]},
             context=context,
             config=config
         )
@@ -127,8 +128,11 @@ class GreatGroupAgent:
             f"以下是缓存记录：\n{full_text}\n"
             f"请解答（{sender}）最后提出的问题或请求。"
         )
-        combined_content.insert(0, {"type": "text", "text": prompt})
-        messages = [{"role": "user", "content": combined_content}]
+        if combined_content:
+            combined_content.insert(0, {"type": "text", "text": prompt})
+            messages = [HumanMessage(content=combined_content)]
+        else:
+            messages = [HumanMessage(content=prompt)]
         context = GroupChatContext(group_name=group, sender_name=sender)
         config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(

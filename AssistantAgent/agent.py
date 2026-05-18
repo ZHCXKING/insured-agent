@@ -10,9 +10,10 @@ from deepagents.backends.filesystem import FilesystemBackend
 from langgraph.checkpoint.redis import RedisSaver
 from langgraph.store.postgres import PostgresStore
 from langchain.chat_models import init_chat_model
+from langchain_core.messages import HumanMessage
 from psycopg_pool import ConnectionPool
 from utils import get_image_type, sanitize_namespace
-from AssistantAgent.tools import send_message, schedule_message_delayed, get_current_time, get_appointment_information
+from AssistantAgent.tools import send_message, schedule_message_delayed, get_current_time, get_information
 from AssistantAgent.subagents import appointment_subagent
 # %%
 logger = logging.getLogger("Assistant")
@@ -91,7 +92,7 @@ class AssistantAgent:
             store=self.store,
             checkpointer=self.checkpointer,
             context_schema=GroupChatContext,
-            tools=[send_message, schedule_message_delayed, get_current_time, get_appointment_information],
+            tools=[send_message, schedule_message_delayed, get_current_time, get_information],
             subagents=[appointment_subagent],
             skills=["/skills/"],
             system_prompt=system_prompt,
@@ -105,7 +106,7 @@ class AssistantAgent:
         context = GroupChatContext(group_name=group, sender_name=sender)
         config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
-            {"messages": [{"role": "user", "content": text}]},
+            {"messages": [HumanMessage(content=text)]},
             context=context,
             config=config
         )
@@ -129,8 +130,11 @@ class AssistantAgent:
             f"以下是缓存记录：\n{full_text}\n"
             f"请解答（{sender}）最后提出的问题或请求。"
         )
-        combined_content.insert(0, {"type": "text", "text": prompt})
-        messages = [{"role": "user", "content": combined_content}]
+        if combined_content:
+            combined_content.insert(0, {"type": "text", "text": prompt})
+            messages = [HumanMessage(content=combined_content)]
+        else:
+            messages = [HumanMessage(content=prompt)]
         context = GroupChatContext(group_name=group, sender_name=sender)
         config = {"configurable": {"thread_id": f"{self.app_name}_{group}"}, "recursion_limit": 50}
         result = self.agent.invoke(
