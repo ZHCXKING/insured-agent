@@ -18,7 +18,7 @@ class BeneficiaryInput(BaseModel):
     english_name: str = Field(default="", description="受益人拼音或英文名")
     id_number: str = Field(default="", description="受益人证件号")
     relationship: str = Field(default="", description="与受保人关系")
-    proportion: Optional[float] = Field(default=None, description="分配比例0~1，按比例模式时必填", ge=0, le=1)
+    proportion: int = Field(default=None, description="分配比例1~100，按比例模式时必填", ge=0, le=100)
     client_id: str = Field(default="", description="关联客户ID（如该受益人已存在于客户库）")
 # %%
 class CreatePolicyInput(BaseModel):

@@ -74,7 +74,7 @@ def assistant_message():
     # todo 下面这里定义群名的转发规则，测试转发是否正确
     if "预备" in group_name:
         agent = LA_agent
-    elif "Support" in group_name:
+    elif "support" in group_name.lower():
         agent = GGA_agent
     else:
         agent = AA_agent

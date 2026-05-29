@@ -13,9 +13,12 @@ def reply_message(message: str, group_name: str, robot_id: str) -> str:
     }
     payload = {"socketType": 2, "list": [message_item]}
     headers = {"Content-Type": "application/json"}
-    response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
-    response_data = response.json()
-    if response.status_code == 200:
-        return f"消息发送成功"
-    else:
-        return f"消息发送失败，接口返回: {response_data}"
+    # todo 这里临时修改规则
+    print(message)
+    return f"消息发送成功"
+    # response = requests.post(url, params=params, json=payload, headers=headers, timeout=10)
+    # response_data = response.json()
+    # if response.status_code == 200:
+    #     return f"消息发送成功"
+    # else:
+    #     return f"消息发送失败，接口返回: {response_data}"

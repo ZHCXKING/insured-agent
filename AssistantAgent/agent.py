@@ -128,7 +128,7 @@ class AssistantAgent:
         full_text = "\n".join(history_text_lines)
         prompt = (
             f"以下是缓存记录：\n{full_text}\n"
-            f"请解答（{sender}）最后提出的问题或请求。"
+            f"请解答（{sender}）最后提出的问题或请求，使用纯文本回答。"
         )
         if combined_content:
             combined_content.insert(0, {"type": "text", "text": prompt})
